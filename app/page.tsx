@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import TodoList from "@/components/TodoList";
 import AddTodoForm from "@/components/AddTodoForm";
 import { Todo } from "@/types";
+import Link from "next/link";
 
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch todos from backend
   useEffect(() => {
+    setLoading(true);
     const fetchTodos = async () => {
       try {
         const response = await fetch("/api/");
@@ -18,12 +22,15 @@ export default function Home() {
         setTodos(todos);
       } catch (error) {
         console.error("Error fetching todos:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchTodos();
   }, []);
 
   const addTodo = async (title: string) => {
+    setError(null);
     try {
       const response = await fetch("/api/", {
         method: "POST",
@@ -33,8 +40,9 @@ export default function Home() {
       if (!response.ok) throw new Error("Failed to add todo");
       const newTodo: Todo = await response.json();
       setTodos((prevTodos) => [...prevTodos, newTodo]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding todo:", error);
+      setError(error.message);
     }
   };
 
@@ -74,6 +82,14 @@ export default function Home() {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold">Todo App</h1>
+      <nav className="mb-4">
+        <Link href="/" className="mr-4 text-blue-500 hover:underline">
+          Home
+        </Link>
+        <Link href="/completed" className="text-blue-500 hover:underline">
+          Completed Todos
+        </Link>
+      </nav>
       <AddTodoForm onAddTodo={addTodo} />
       <TodoList todos={todos} onComplete={toggleTodo} onDelete={deleteTodo} />
     </div>
